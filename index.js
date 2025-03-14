@@ -1,38 +1,40 @@
 import jsonfile from "jsonfile";
 import moment from "moment";
 import simpleGit from "simple-git";
+import random from "random";
 
-const git = simpleGit();
 const path = "./data.json";
 
-const startDate = moment("2022-01-01");
-const endDate = moment("2022-12-31");
+const markCommit = (x, y) => {
+  const date = moment()
+    .subtract(1, "y")
+    .add(1, "d")
+    .add(x, "w")
+    .add(y, "d")
+    .format();
 
-async function generateCommits() {
-    for (let date = startDate.clone(); date.isBefore(endDate); date.add(1, 'day')) {
-        const commitDate = date.format("YYYY-MM-DD HH:mm:ss");
-        
-        const commitCount = Math.floor(Math.random() * 10) + 1;
+  const data = {
+    date: date,
+  };
 
-        for (let i = 0; i < commitCount; i++) {
-            const data = { date: commitDate };
+  jsonfile.writeFile(path, data, () => {
+    simpleGit().add([path]).commit(date, { "--date": date }).push();
+  });
+};
 
-            await jsonfile.writeFile(path, data);
+const makeCommits = (n) => {
+  if(n===0) return simpleGit().push();
+  const x = random.int(0, 54);
+  const y = random.int(0, 6);
+  const date = moment().subtract(1, "y").add(1, "d").add(x, "w").add(y, "d").format();
 
-            await git.add([path])
-                .commit(`Commit on ${commitDate}`, {
-                    '--date': commitDate,
-                }, {
-                    env: {
-                        GIT_AUTHOR_DATE: commitDate,
-                        GIT_COMMITTER_DATE: commitDate
-                    }
-                });
-        }
-    }
+  const data = {
+    date: date,
+  };
+  console.log(date);
+  jsonfile.writeFile(path, data, () => {
+    simpleGit().add([path]).commit(date, { "--date": date },makeCommits.bind(this,--n));
+  });
+};
 
-    await git.push();
-    console.log("All commits pushed successfully!");
-}
-
-generateCommits();
+makeCommits(100);
